@@ -115,6 +115,12 @@ func parsewf(contents string) (*wfobj, error) {
 }
 
 func line(img *image.RGBA, x0, y0, x1, y1 int, c color.Color) {
+	// ensure draw is ltr
+	if x1 < x0 {
+		x0, x1 = x1, x0
+		y0, y1 = y1, y0
+	}
+
 	dy := y1 - y0
 	dx := x1 - x0
 	if dx > dy {
