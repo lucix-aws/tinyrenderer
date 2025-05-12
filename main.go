@@ -10,26 +10,46 @@ import (
 const width = 800
 const height = 800
 
-var red = color.RGBA{
-	0xff, 0, 0, 0xff,
-}
+var (
+	red   = color.RGBA{0xff, 0, 0, 0xff}
+	green = color.RGBA{0, 0xff, 0, 0xff}
+	blue  = color.RGBA{0, 0, 0xff, 0xff}
 
-var cyan = color.RGBA{
-	0, 0xff, 0xff, 0xff,
-}
+	cyan    = color.RGBA{0, 0xff, 0xff, 0xff}
+	magenta = color.RGBA{0xff, 0, 0xff, 0xff}
+	yellow  = color.RGBA{0xff, 0xff, 0, 0xff}
 
-// figure out the slope, and using an arbitrary step, traverse from
-// p0 to p1 and fill in the color
+	white = color.RGBA{0xff, 0xff, 0xff, 0xff}
+)
+
+// instead of an arbitrary step, use dx to figure out how many pixels to draw
+// creep along the y axis fractionally as we do so
+//
+// this does NOT work for lines w/ slope > 45deg because dx does not correspond
+// to number of iterations in that case
 func line(img *image.RGBA, x0, y0, x1, y1 int, c color.Color) {
 	dy := float64(y1 - y0)
 	dx := float64(x1 - x0)
-	for i := float64(0); i <= 1; i += 0.1 {
-		img.Set(x0+int(dx*i), y0+int(dy*i), c)
+	for i := x0; i <= x1; i++ {
+		sy := dy*float64(i)/dx - dy
+		img.Set(i, y0+int(sy), c)
 	}
 }
 
 func render(i *image.RGBA) {
-	line(i, 0, 0, 400, 400, cyan)
+	line(i, 0, 100, 800, 100, white)
+	line(i, 0, 200, 800, 200, white)
+	line(i, 0, 300, 800, 300, white)
+	line(i, 0, 400, 800, 400, white)
+	line(i, 0, 500, 800, 500, white)
+	line(i, 0, 600, 800, 600, white)
+	line(i, 0, 700, 800, 700, white)
+	line(i, 200, 200, 400, 100, cyan)
+
+	// should not work? because dx is 0
+	line(i, 200, 200, 200, 100, magenta)
+	// should not work? because dx != iterations
+	line(i, 200, 200, 250, 300, yellow)
 }
 
 func main() {
