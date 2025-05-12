@@ -135,7 +135,7 @@ func line(img *image.RGBA, x0, y0, x1, y1 int, c color.Color) {
 	}
 }
 
-func render(i *image.RGBA) {
+func renderLines(i *image.RGBA) {
 	// grid x
 	line(i, 0, 100, 800, 100, grey)
 	line(i, 0, 200, 800, 200, grey)
@@ -158,6 +158,29 @@ func render(i *image.RGBA) {
 	line(i, 200, 200, 700, 700, yellow)
 	line(i, 200, 200, 600, 500, green)
 	line(i, 200, 200, 300, 0, red)
+}
+
+// render frontal 2D projection of model (no z-index)
+func render2D(img *image.RGBA, model *wfobj) {
+	imgWidth := img.Rect.Max.X
+	imgHeight := img.Rect.Max.Y
+	for _, face := range model.Faces {
+		// map normalized coordinates to be relative to center of image
+		v0 := model.Vertices[face.VRefs[0]]
+		x0 := int(float64(imgWidth/2) + v0.x*float64(imgWidth/2))
+		y0 := int(float64(imgHeight/2) + v0.y*float64(imgHeight/2))
+
+		v1 := model.Vertices[face.VRefs[1]]
+		x1 := int(float64(imgWidth/2) + v1.x*float64(imgWidth/2))
+		y1 := int(float64(imgHeight/2) + v1.y*float64(imgHeight/2))
+
+		////	v2 := model.Vertices[face.VRefs[2]]
+		////	x2 := int(float64(imgWidth/2) + v2.x*float64(imgWidth))
+		////	y2 := int(float64(imgHeight/2) + v2.y*float64(imgHeight))
+
+		fmt.Println(x0, y0, "->", x1, y1)
+		line(img, x0, y0, x1, y1, cyan)
+	}
 }
 
 func main() {
@@ -183,7 +206,8 @@ func main() {
 
 	fmt.Printf("loaded model w/ %d vertices, %d faces\n", len(model.Vertices), len(model.Faces))
 
-	render(img)
+	renderLines(img)
+	render2D(img, model)
 
 	f, err := os.Create("out.png")
 	if err != nil {
