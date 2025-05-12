@@ -1,10 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"image"
 	"image/color"
 	"image/png"
+	"io"
 	"os"
+	"strings"
 )
 
 const width = 800
@@ -22,6 +25,26 @@ var (
 	white = color.RGBA{0xff, 0xff, 0xff, 0xff}
 	grey  = color.RGBA{0x80, 0x80, 0x80, 0xff}
 )
+
+// 3d model parsed from wavefront object format
+// https://en.wikipedia.org/wiki/Wavefront_.obj_file
+type wfobj struct {
+}
+
+func parsewf(contents string) (*wfobj, error) {
+	var obj wfobj
+
+	lines := strings.Split(contents, "\n")
+	for _, line := range lines {
+		if strings.HasPrefix(line, "#") {
+			continue // comment
+		} else {
+			return nil, fmt.Errorf("unrecognized line type: %q", line)
+		}
+	}
+
+	return &obj, nil
+}
 
 func line(img *image.RGBA, x0, y0, x1, y1 int, c color.Color) {
 	dy := y1 - y0
@@ -73,6 +96,22 @@ func main() {
 	img := image.NewRGBA(image.Rectangle{
 		Max: image.Point{width, height},
 	})
+
+	objfile, err := os.Open("in.obj")
+	if err != nil {
+		panic(err)
+	}
+	defer objfile.Close()
+
+	obj, err := io.ReadAll(objfile)
+	if err != nil {
+		panic(err)
+	}
+
+	_, err = parsewf(string(obj))
+	if err != nil {
+		panic(err)
+	}
 
 	render(img)
 
