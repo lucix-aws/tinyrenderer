@@ -20,6 +20,7 @@ var (
 	yellow  = color.RGBA{0xff, 0xff, 0, 0xff}
 
 	white = color.RGBA{0xff, 0xff, 0xff, 0xff}
+	grey  = color.RGBA{0x80, 0x80, 0x80, 0xff}
 )
 
 // instead of an arbitrary step, use dx to figure out how many pixels to draw
@@ -45,21 +46,21 @@ func line(img *image.RGBA, x0, y0, x1, y1 int, c color.Color) {
 
 func render(i *image.RGBA) {
 	// grid x
-	line(i, 0, 100, 800, 100, white)
-	line(i, 0, 200, 800, 200, white)
-	line(i, 0, 300, 800, 300, white)
-	line(i, 0, 400, 800, 400, white)
-	line(i, 0, 500, 800, 500, white)
-	line(i, 0, 600, 800, 600, white)
-	line(i, 0, 700, 800, 700, white)
+	line(i, 0, 100, 800, 100, grey)
+	line(i, 0, 200, 800, 200, grey)
+	line(i, 0, 300, 800, 300, grey)
+	line(i, 0, 400, 800, 400, grey)
+	line(i, 0, 500, 800, 500, grey)
+	line(i, 0, 600, 800, 600, grey)
+	line(i, 0, 700, 800, 700, grey)
 	// grid y
-	line(i, 100, 0, 100, 800, white)
-	line(i, 200, 0, 200, 800, white)
-	line(i, 300, 0, 300, 800, white)
-	line(i, 400, 0, 400, 800, white)
-	line(i, 500, 0, 500, 800, white)
-	line(i, 600, 0, 600, 800, white)
-	line(i, 700, 0, 700, 800, white)
+	line(i, 100, 0, 100, 800, grey)
+	line(i, 200, 0, 200, 800, grey)
+	line(i, 300, 0, 300, 800, grey)
+	line(i, 400, 0, 400, 800, grey)
+	line(i, 500, 0, 500, 800, grey)
+	line(i, 600, 0, 600, 800, grey)
+	line(i, 700, 0, 700, 800, grey)
 
 	line(i, 200, 200, 700, 100, cyan)
 	line(i, 200, 200, 300, 700, magenta)
