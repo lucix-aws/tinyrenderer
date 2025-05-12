@@ -9,6 +9,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const width = 800
@@ -219,7 +220,11 @@ func main() {
 	fmt.Printf("loaded model w/ %d vertices, %d faces\n", len(model.Vertices), len(model.Faces))
 
 	renderLines(img)
+
+	start := time.Now()
 	render2D(img, model)
+	end := time.Now()
+	fmt.Printf("render in %v\n", end.Sub(start))
 
 	f, err := os.Create("out.png")
 	if err != nil {
