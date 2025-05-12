@@ -123,7 +123,12 @@ func line(img *image.RGBA, x0, y0, x1, y1 int, c color.Color) {
 
 	dy := y1 - y0
 	dx := x1 - x0
-	if dx > dy {
+	if dy < 0 && -dy > dx {
+		for i := 0; i <= -dy; i++ {
+			sx := float64(dx*i) / float64(-dy)
+			img.Set(x0+int(sx), y0-i, c)
+		}
+	} else if dx > dy {
 		for i := 0; i <= dx; i++ {
 			sy := float64(dy*i) / float64(dx)
 			img.Set(x0+i, y0+int(sy), c)
