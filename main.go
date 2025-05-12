@@ -153,11 +153,11 @@ func renderLines(i *image.RGBA) {
 	line(i, 600, 0, 600, 800, grey)
 	line(i, 700, 0, 700, 800, grey)
 
-	line(i, 200, 200, 700, 100, cyan)
-	line(i, 200, 200, 300, 700, magenta)
-	line(i, 200, 200, 700, 700, yellow)
-	line(i, 200, 200, 600, 500, green)
-	line(i, 200, 200, 300, 0, red)
+	// //line(i, 200, 200, 700, 100, cyan)
+	// //line(i, 200, 200, 300, 700, magenta)
+	// //line(i, 200, 200, 700, 700, yellow)
+	// //line(i, 200, 200, 600, 500, green)
+	// //line(i, 200, 200, 300, 0, red)
 }
 
 // render frontal 2D projection of model (no z-index)
@@ -168,18 +168,19 @@ func render2D(img *image.RGBA, model *wfobj) {
 		// map normalized coordinates to be relative to center of image
 		v0 := model.Vertices[face.VRefs[0]]
 		x0 := int(float64(imgWidth/2) + v0.x*float64(imgWidth/2))
-		y0 := int(float64(imgHeight/2) + v0.y*float64(imgHeight/2))
+		y0 := int(float64(imgHeight/2) - v0.y*float64(imgHeight/2))
 
 		v1 := model.Vertices[face.VRefs[1]]
 		x1 := int(float64(imgWidth/2) + v1.x*float64(imgWidth/2))
-		y1 := int(float64(imgHeight/2) + v1.y*float64(imgHeight/2))
+		y1 := int(float64(imgHeight/2) - v1.y*float64(imgHeight/2))
 
-		////	v2 := model.Vertices[face.VRefs[2]]
-		////	x2 := int(float64(imgWidth/2) + v2.x*float64(imgWidth))
-		////	y2 := int(float64(imgHeight/2) + v2.y*float64(imgHeight))
+		v2 := model.Vertices[face.VRefs[2]]
+		x2 := int(float64(imgWidth/2) + v2.x*float64(imgWidth/2))
+		y2 := int(float64(imgHeight/2) - v2.y*float64(imgHeight/2))
 
-		fmt.Println(x0, y0, "->", x1, y1)
 		line(img, x0, y0, x1, y1, cyan)
+		line(img, x0, y0, x2, y2, magenta)
+		line(img, x1, y1, x2, y2, yellow)
 	}
 }
 
