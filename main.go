@@ -7,6 +7,7 @@ import (
 	"image/png"
 	"io"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -29,6 +30,16 @@ var (
 // 3d model parsed from wavefront object format
 // https://en.wikipedia.org/wiki/Wavefront_.obj_file
 type wfobj struct {
+	Vertices []vertex
+	Faces    []face
+}
+
+type vertex struct {
+	x, y, z float64
+}
+
+type face struct {
+	VRefs []int
 }
 
 func parsewf(contents string) (*wfobj, error) {
@@ -36,8 +47,65 @@ func parsewf(contents string) (*wfobj, error) {
 
 	lines := strings.Split(contents, "\n")
 	for _, line := range lines {
-		if strings.HasPrefix(line, "#") {
-			continue // comment
+		if line == "" { // blank
+			continue
+		} else if strings.HasPrefix(line, "#") { // comment
+			continue
+		} else if strings.HasPrefix(line, "vt") { // something texture
+		} else if strings.HasPrefix(line, "vn") { // vertex normal?
+		} else if strings.HasPrefix(line, "g") { // ???
+		} else if strings.HasPrefix(line, "s") { // ???
+		} else if strings.HasPrefix(line, "v") { // vertex
+			vdecl := strings.Split(line, " ")
+			if len(vdecl) != 4 {
+				return nil, fmt.Errorf("invalid v decl: %q", line)
+			}
+
+			x, err := strconv.ParseFloat(vdecl[1], 64)
+			if err != nil {
+				return nil, fmt.Errorf("invalid v.x decl: %q", vdecl[1])
+			}
+
+			y, err := strconv.ParseFloat(vdecl[2], 64)
+			if err != nil {
+				return nil, fmt.Errorf("invalid v.y decl: %q", vdecl[2])
+			}
+
+			z, err := strconv.ParseFloat(vdecl[3], 64)
+			if err != nil {
+				return nil, fmt.Errorf("invalid v.z decl: %q", vdecl[3])
+			}
+
+			obj.Vertices = append(obj.Vertices, vertex{x, y, z})
+		} else if strings.HasPrefix(line, "f") { // face
+			fdecl := strings.Split(line, " ")
+			if len(fdecl) != 4 {
+				return nil, fmt.Errorf("invalid f decl: %q", line)
+			}
+
+			// only look at vertex part for now
+
+			f1 := strings.Split(fdecl[1], "/")
+			vref1, err := strconv.Atoi(f1[0])
+			if err != nil {
+				return nil, fmt.Errorf("invalid f1 decl: %q", f1)
+			}
+
+			f2 := strings.Split(fdecl[2], "/")
+			vref2, err := strconv.Atoi(f2[0])
+			if err != nil {
+				return nil, fmt.Errorf("invalid f2 decl: %q", f2)
+			}
+
+			f3 := strings.Split(fdecl[3], "/")
+			vref3, err := strconv.Atoi(f3[0])
+			if err != nil {
+				return nil, fmt.Errorf("invalid f3 decl: %q", f3)
+			}
+
+			obj.Faces = append(obj.Faces, face{
+				VRefs: []int{vref1 - 1, vref2 - 1, vref3 - 1},
+			})
 		} else {
 			return nil, fmt.Errorf("unrecognized line type: %q", line)
 		}
@@ -108,10 +176,12 @@ func main() {
 		panic(err)
 	}
 
-	_, err = parsewf(string(obj))
+	model, err := parsewf(string(obj))
 	if err != nil {
 		panic(err)
 	}
+
+	fmt.Printf("loaded model w/ %d vertices, %d faces\n", len(model.Vertices), len(model.Faces))
 
 	render(img)
 
