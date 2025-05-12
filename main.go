@@ -36,6 +36,11 @@ func line(img *image.RGBA, x0, y0, x1, y1 int, c color.Color) {
 			sy := float64(dy*i) / float64(dx)
 			img.Set(x0+i, y0+int(sy), c)
 		}
+		// alternative: x0-based indexing
+		// for i := x0; i <= x1; i++ {
+		//     sy := float64(dy*(i-x0)) / float64(dx)
+		//     img.Set(i, y0+int(sy), c)
+		// }
 	} else {
 		for i := 0; i <= dy; i++ {
 			sx := float64(dx*i) / float64(dy)
