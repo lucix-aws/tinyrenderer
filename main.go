@@ -23,11 +23,6 @@ var (
 	grey  = color.RGBA{0x80, 0x80, 0x80, 0xff}
 )
 
-// instead of an arbitrary step, use dx to figure out how many pixels to draw
-// creep along the y axis fractionally as we do so
-//
-// this does NOT work for lines where dy > dx because dx does not correspond
-// to number of iterations in that case
 func line(img *image.RGBA, x0, y0, x1, y1 int, c color.Color) {
 	dy := y1 - y0
 	dx := x1 - x0
@@ -70,6 +65,8 @@ func render(i *image.RGBA) {
 	line(i, 200, 200, 700, 100, cyan)
 	line(i, 200, 200, 300, 700, magenta)
 	line(i, 200, 200, 700, 700, yellow)
+	line(i, 200, 200, 600, 500, green)
+	line(i, 200, 200, 300, 0, red)
 }
 
 func main() {
