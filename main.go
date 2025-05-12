@@ -43,14 +43,8 @@ func line(img *image.RGBA, x0, y0, x1, y1 int, c color.Color) {
 	}
 }
 
-// stopgap before vertical lines actually work
-func vline(img *image.RGBA, x int, c color.Color) {
-	for i := 0; i < img.Rect.Max.Y; i++ {
-		img.Set(x, i, c)
-	}
-}
-
 func render(i *image.RGBA) {
+	// grid x
 	line(i, 0, 100, 800, 100, white)
 	line(i, 0, 200, 800, 200, white)
 	line(i, 0, 300, 800, 300, white)
@@ -58,13 +52,14 @@ func render(i *image.RGBA) {
 	line(i, 0, 500, 800, 500, white)
 	line(i, 0, 600, 800, 600, white)
 	line(i, 0, 700, 800, 700, white)
-	vline(i, 100, white)
-	vline(i, 200, white)
-	vline(i, 300, white)
-	vline(i, 400, white)
-	vline(i, 500, white)
-	vline(i, 600, white)
-	vline(i, 700, white)
+	// grid y
+	line(i, 100, 0, 100, 800, white)
+	line(i, 200, 0, 200, 800, white)
+	line(i, 300, 0, 300, 800, white)
+	line(i, 400, 0, 400, 800, white)
+	line(i, 500, 0, 500, 800, white)
+	line(i, 600, 0, 600, 800, white)
+	line(i, 700, 0, 700, 800, white)
 
 	line(i, 200, 200, 700, 100, cyan)
 	line(i, 200, 200, 300, 700, magenta)
