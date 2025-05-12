@@ -30,9 +30,16 @@ var (
 func line(img *image.RGBA, x0, y0, x1, y1 int, c color.Color) {
 	dy := y1 - y0
 	dx := x1 - x0
-	for i := 0; i <= dx; i++ {
-		sy := float64(dy) * float64(i) / float64(dx)
-		img.Set(x0+i, y0+int(sy), c)
+	if dx > dy {
+		for i := 0; i <= dx; i++ {
+			sy := float64(dy*i) / float64(dx)
+			img.Set(x0+i, y0+int(sy), c)
+		}
+	} else {
+		for i := 0; i <= dy; i++ {
+			sx := float64(dx*i) / float64(dy)
+			img.Set(x0+int(sx), y0+i, c)
+		}
 	}
 }
 
@@ -59,9 +66,9 @@ func render(i *image.RGBA) {
 	vline(i, 600, white)
 	vline(i, 700, white)
 
-	line(i, 200, 200, 700, 100, red)
-	// not correct (dotted line) bc dy > dx
-	line(i, 200, 200, 300, 700, cyan)
+	line(i, 200, 200, 700, 100, cyan)
+	line(i, 200, 200, 300, 700, magenta)
+	line(i, 200, 200, 700, 700, yellow)
 }
 
 func main() {
