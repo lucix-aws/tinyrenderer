@@ -6,6 +6,7 @@ import (
 	"image/color"
 	"image/png"
 	"io"
+	"math"
 	"math/rand"
 	"os"
 	"strconv"
@@ -43,8 +44,43 @@ type wfobj struct {
 	Faces    []face
 }
 
+// 3d point, also functions as a "vector" type
+// if you did calc3 these operations will be familiar
 type vertex struct {
 	x, y, z float64
+}
+
+func (v *vertex) Length() float64 {
+	return math.Sqrt(v.x*v.x + v.y*v.y + v.z*v.z)
+}
+
+func (v *vertex) DotProduct(o *vertex) float64 {
+	return v.x*o.x + v.y*o.y + v.z*o.z
+}
+
+func (v *vertex) CrossProduct(o *vertex) *vertex {
+	return &vertex{
+		v.y*o.z - v.z*o.y,
+		v.z*o.x - v.x*o.z,
+		v.x*o.y - v.y*o.x,
+	}
+}
+
+func (v *vertex) Sub(o *vertex) *vertex {
+	return &vertex{
+		v.x - o.x,
+		v.y - o.y,
+		v.z - o.z,
+	}
+}
+
+func (v *vertex) Unit() *vertex {
+	l := v.Length()
+	return &vertex{
+		v.x / l,
+		v.y / l,
+		v.z / l,
+	}
 }
 
 type face struct {
@@ -176,6 +212,8 @@ func renderGrid(i *image.RGBA) {
 
 // render frontal 2D projection of model (no z-index)
 func render2D(img *image.RGBA, model *wfobj) {
+	lightSource := vertex{0, 0, -1}
+
 	imgWidth := img.Rect.Max.X
 	imgHeight := img.Rect.Max.Y
 	for _, face := range model.Faces {
@@ -192,10 +230,28 @@ func render2D(img *image.RGBA, model *wfobj) {
 		x2 := int(float64(imgWidth/2) + v2.x*float64(imgWidth/2))
 		y2 := int(float64(imgHeight/2) - v2.y*float64(imgHeight/2))
 
+		// calculate illumination on face. you can derive a brightness by
+		// defining an arbitrary "light source" unit vector that describes
+		// where the light is pointing. then if you take the dot product of
+		// that and the unit vector _normal_ to two of the triangle's faces,
+		// you get a brightness value. this value can be negative, which means
+		// the polygon is facing away from you, so we can just skip drawing
+		// that.
+		face1 := v2.Sub(&v0)
+		face2 := v1.Sub(&v0)
+		faceNormal := face1.CrossProduct(face2)
+		faceNormalUnit := faceNormal.Unit()
+		faceBrightness := lightSource.DotProduct(faceNormalUnit)
+
 		//line(img, x0, y0, x1, y1, cyan)
 		//line(img, x0, y0, x2, y2, magenta)
 		//line(img, x1, y1, x2, y2, yellow)
-		triangle(img, tri{{x0, y0}, {x1, y1}, {x2, y2}}, randcolor())
+		if faceBrightness > 0 {
+			rgb := byte(faceBrightness * 0xff)
+			triangle(img, tri{{x0, y0}, {x1, y1}, {x2, y2}}, color.RGBA{
+				0, rgb, rgb, 0xff,
+			})
+		}
 	}
 }
 
