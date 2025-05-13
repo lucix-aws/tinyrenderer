@@ -295,8 +295,14 @@ func main() {
 	//end := time.Now()
 	//fmt.Printf("render in %v\n", end.Sub(start))
 
-	t1 := tri{{450, 300}, {250, 200}, {400, 600}}
+	t1 := tri{{100, 100}, {200, 200}, {150, 300}}
 	triangle(img, t1)
+
+	// flat-top/bottom triangles need to work
+	t2 := tri{{300, 100}, {400, 100}, {400, 300}}
+	triangle(img, t2)
+	t3 := tri{{500, 100}, {500, 300}, {600, 300}}
+	triangle(img, t3)
 
 	f, err := os.Create("out.png")
 	if err != nil {
