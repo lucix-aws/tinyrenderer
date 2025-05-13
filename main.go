@@ -9,7 +9,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"time"
 )
 
 const width = 800
@@ -196,6 +195,55 @@ func render2D(img *image.RGBA, model *wfobj) {
 	}
 }
 
+type tri [3]image.Point
+
+// by y coordinate
+func (t *tri) Sort() {
+	if t[0].Y > t[1].Y {
+		t[0], t[1] = t[1], t[0]
+	}
+	if t[0].Y > t[2].Y {
+		fmt.Println("swap 02")
+		t[0], t[2] = t[2], t[0]
+	}
+	if t[1].Y > t[2].Y {
+		fmt.Println("swap 12")
+		t[1], t[2] = t[2], t[1]
+	}
+}
+
+func triangle(img *image.RGBA, t tri) {
+	t.Sort()
+
+	line(img, t[0].X, t[0].Y, t[1].X, t[1].Y, grey)
+	line(img, t[0].X, t[0].Y, t[2].X, t[2].Y, grey)
+	line(img, t[1].X, t[1].Y, t[2].X, t[2].Y, grey)
+
+	// dx1 could be the left or right line but it doesn't really matter
+	dx1 := t[1].X - t[0].X
+	dx2 := t[2].X - t[0].X
+	dy1 := t[1].Y - t[0].Y
+	dy2 := t[2].Y - t[0].Y
+
+	// top half
+	for i := t[0].Y; i <= t[1].Y; i++ {
+		sx1 := float64(dx1*(i-t[0].Y)) / float64(dy1)
+		sx2 := float64(dx2*(i-t[0].Y)) / float64(dy2)
+		x1 := t[0].X + int(sx1)
+		x2 := t[0].X + int(sx2)
+		swapgt(&x1, &x2)
+		for ii := x1; ii <= x2; ii++ {
+			img.Set(ii, i, cyan)
+		}
+	}
+}
+
+func swapgt(i, j *int) {
+	if *i > *j {
+		*i, *j = *j, *i
+	}
+}
+
 func main() {
 	img := image.NewRGBA(image.Rectangle{
 		Max: image.Point{width, height},
@@ -221,10 +269,13 @@ func main() {
 
 	renderLines(img)
 
-	start := time.Now()
-	render2D(img, model)
-	end := time.Now()
-	fmt.Printf("render in %v\n", end.Sub(start))
+	//start := time.Now()
+	//render2D(img, model)
+	//end := time.Now()
+	//fmt.Printf("render in %v\n", end.Sub(start))
+
+	t1 := tri{{450, 300}, {250, 200}, {400, 600}}
+	triangle(img, t1)
 
 	f, err := os.Create("out.png")
 	if err != nil {
