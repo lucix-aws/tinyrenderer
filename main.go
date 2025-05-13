@@ -6,6 +6,7 @@ import (
 	"image/color"
 	"image/png"
 	"io"
+	"math/rand"
 	"os"
 	"strconv"
 	"strings"
@@ -27,6 +28,13 @@ var (
 	white = color.RGBA{0xff, 0xff, 0xff, 0xff}
 	grey  = color.RGBA{0x80, 0x80, 0x80, 0xff}
 )
+
+var colors = []color.Color{red, green, blue, cyan, magenta, yellow}
+
+func randcolor() color.Color {
+	i := rand.Int() % len(colors)
+	return colors[i]
+}
 
 // 3d model parsed from wavefront object format
 // https://en.wikipedia.org/wiki/Wavefront_.obj_file
@@ -147,7 +155,7 @@ func line(img *image.RGBA, x0, y0, x1, y1 int, c color.Color) {
 	}
 }
 
-func renderLines(i *image.RGBA) {
+func renderGrid(i *image.RGBA) {
 	// grid x
 	line(i, 0, 100, 800, 100, grey)
 	line(i, 0, 200, 800, 200, grey)
@@ -164,12 +172,6 @@ func renderLines(i *image.RGBA) {
 	line(i, 500, 0, 500, 800, grey)
 	line(i, 600, 0, 600, 800, grey)
 	line(i, 700, 0, 700, 800, grey)
-
-	// //line(i, 200, 200, 700, 100, cyan)
-	// //line(i, 200, 200, 300, 700, magenta)
-	// //line(i, 200, 200, 700, 700, yellow)
-	// //line(i, 200, 200, 600, 500, green)
-	// //line(i, 200, 200, 300, 0, red)
 }
 
 // render frontal 2D projection of model (no z-index)
@@ -193,7 +195,7 @@ func render2D(img *image.RGBA, model *wfobj) {
 		//line(img, x0, y0, x1, y1, cyan)
 		//line(img, x0, y0, x2, y2, magenta)
 		//line(img, x1, y1, x2, y2, yellow)
-		triangle(img, tri{{x0, y0}, {x1, y1}, {x2, y2}})
+		triangle(img, tri{{x0, y0}, {x1, y1}, {x2, y2}}, randcolor())
 	}
 }
 
@@ -212,12 +214,8 @@ func (t *tri) Sort() {
 	}
 }
 
-func triangle(img *image.RGBA, t tri) {
+func triangle(img *image.RGBA, t tri, c color.Color) {
 	t.Sort()
-
-	line(img, t[0].X, t[0].Y, t[1].X, t[1].Y, grey)
-	line(img, t[0].X, t[0].Y, t[2].X, t[2].Y, grey)
-	line(img, t[1].X, t[1].Y, t[2].X, t[2].Y, grey)
 
 	// dx1 could be the left or right line but it doesn't really matter
 	dx1 := t[1].X - t[0].X
@@ -238,7 +236,7 @@ func triangle(img *image.RGBA, t tri) {
 			x2 = t[0].X + int(sx2)
 			swapgt(&x1, &x2)
 			for ii := x1; ii <= x2; ii++ {
-				img.Set(ii, i, cyan)
+				img.Set(ii, i, c)
 			}
 		}
 	}
@@ -259,7 +257,7 @@ func triangle(img *image.RGBA, t tri) {
 			x2 := origX2 + int(sx2)
 			swapgt(&x1, &x2)
 			for ii := x1; ii <= x2; ii++ {
-				img.Set(ii, i, magenta)
+				img.Set(ii, i, c)
 			}
 		}
 	}
@@ -294,7 +292,7 @@ func main() {
 
 	fmt.Printf("loaded model w/ %d vertices, %d faces\n", len(model.Vertices), len(model.Faces))
 
-	renderLines(img)
+	renderGrid(img)
 
 	start := time.Now()
 	render2D(img, model)
