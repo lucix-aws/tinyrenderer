@@ -11,7 +11,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"time"
 )
 
 const width = 800
@@ -80,6 +79,19 @@ func (v *vertex) Unit() *vertex {
 		v.x / l,
 		v.y / l,
 		v.z / l,
+	}
+}
+
+// should be able to combine w/ vertex via generic
+type Point3 struct {
+	X, Y, Z int
+}
+
+func (i Point3) CrossProduct(j Point3) Point3 {
+	return Point3{
+		i.Y*j.Z - i.Z*j.Y,
+		i.Z*j.X - i.X*j.Z,
+		i.X*j.Y - i.Y*j.X,
 	}
 }
 
@@ -269,6 +281,8 @@ func (t *tri) Sort() {
 	}
 }
 
+// "primitive" triangle render: sort by y coordinates, divide into 2 sub-triangles,
+// and fill one line at a time
 func triangle(img *image.RGBA, t tri, c color.Color) {
 	t.Sort()
 
@@ -318,6 +332,48 @@ func triangle(img *image.RGBA, t tri, c color.Color) {
 	}
 }
 
+// i really don't fully understand how this is computed atm, but I understand
+// how to interpret the result
+func barycentric(t tri, p image.Point) vertex {
+	v1 := Point3{t[2].X - t[0].X, t[1].X - t[0].X, t[0].X - p.X}
+	v2 := Point3{t[2].Y - t[0].Y, t[1].Y - t[0].Y, t[0].Y - p.Y}
+	cross := v1.CrossProduct(v2)
+	if abs(cross.Z) < 1 {
+		return vertex{-1, -1, -1}
+	}
+	return vertex{
+		1 - float64(cross.X+cross.Y)/float64(cross.Z),
+		float64(cross.Y) / float64(cross.Z),
+		float64(cross.X) / float64(cross.Z),
+	}
+}
+
+func abs(v int) int {
+	if v < 0 {
+		return -v
+	}
+	return v
+}
+
+func triangleBarycentric(img *image.RGBA, t tri, c color.Color) {
+	boxMin := image.Point{
+		min(t[0].X, t[1].X, t[2].X),
+		min(t[0].Y, t[1].Y, t[2].Y),
+	}
+	boxMax := image.Point{
+		max(t[0].X, t[1].X, t[2].X),
+		max(t[0].Y, t[1].Y, t[2].Y),
+	}
+	for x := boxMin.X; x < boxMax.X; x++ {
+		for y := boxMin.Y; y < boxMax.Y; y++ {
+			b := barycentric(t, image.Point{x, y})
+			if b.x > 0 && b.y > 0 && b.z > 0 {
+				img.Set(x, y, c)
+			}
+		}
+	}
+}
+
 func swapgt(i, j *int) {
 	if *i > *j {
 		*i, *j = *j, *i
@@ -349,10 +405,13 @@ func main() {
 
 	renderGrid(img)
 
-	start := time.Now()
-	render2D(img, model)
-	end := time.Now()
-	fmt.Printf("render in %v\n", end.Sub(start))
+	// test barycentric triangle
+	triangleBarycentric(img, tri{{150, 150}, {250, 250}, {200, 350}}, cyan)
+
+	////start := time.Now()
+	////render2D(img, model)
+	////end := time.Now()
+	////fmt.Printf("render in %v\n", end.Sub(start))
 
 	f, err := os.Create("out.png")
 	if err != nil {
