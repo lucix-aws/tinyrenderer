@@ -226,14 +226,35 @@ func triangle(img *image.RGBA, t tri) {
 	dy2 := t[2].Y - t[0].Y
 
 	// top half
+	// we need to remember x1 so we can pick up from there in the bottom half
+	// x1 will be guaranteed to be the "left" x
+	var x1 int
 	for i := t[0].Y; i <= t[1].Y; i++ {
 		sx1 := float64(dx1*(i-t[0].Y)) / float64(dy1)
 		sx2 := float64(dx2*(i-t[0].Y)) / float64(dy2)
-		x1 := t[0].X + int(sx1)
+		x1 = t[0].X + int(sx1)
 		x2 := t[0].X + int(sx2)
 		swapgt(&x1, &x2)
 		for ii := x1; ii <= x2; ii++ {
 			img.Set(ii, i, cyan)
+		}
+	}
+
+	// bottom half, recompute deltas
+	// dx1 is now guaranteed to be the left
+	// there's only ONE dy now because we're converging on the last point
+	dx1 = t[2].X - x1
+	dx2 = t[2].X - t[1].X
+	dy := t[2].Y - t[1].Y
+	origX1 := x1
+	for i := t[1].Y; i <= t[2].Y; i++ {
+		sx1 := float64(dx1*(i-t[1].Y)) / float64(dy)
+		sx2 := float64(dx2*(i-t[1].Y)) / float64(dy)
+		x1 := origX1 + int(sx1)
+		x2 := t[1].X + int(sx2)
+		swapgt(&x1, &x2)
+		for ii := x1; ii <= x2; ii++ {
+			img.Set(ii, i, magenta)
 		}
 	}
 }
