@@ -368,7 +368,7 @@ func triangleBarycentric(img *image.RGBA, t tri, c color.Color) {
 	for x := boxMin.X; x < boxMax.X; x++ {
 		for y := boxMin.Y; y < boxMax.Y; y++ {
 			b := barycentric(t, image.Point{x, y})
-			if b.x > 0 && b.y > 0 && b.z > 0 {
+			if b.x >= 0 && b.y >= 0 && b.z >= 0 {
 				img.Set(x, y, c)
 			}
 		}
