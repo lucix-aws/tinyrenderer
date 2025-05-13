@@ -229,6 +229,12 @@ func render2D(img *image.RGBA, model *wfobj) {
 
 	imgWidth := img.Rect.Max.X
 	imgHeight := img.Rect.Max.Y
+	zbuf := make([]int, imgWidth*imgHeight)
+	for i := range zbuf {
+		zbuf[i] = -0xffffffff
+	}
+	fmt.Println(zbuf[0])
+
 	for _, face := range model.Faces {
 		// map normalized coordinates to be relative to center of image
 		v0 := model.Vertices[face.VRefs[0]]
@@ -262,7 +268,7 @@ func render2D(img *image.RGBA, model *wfobj) {
 			rgb := byte(faceBrightness * 0xff)
 			triangleBarycentric(img, tri{{x0, y0}, {x1, y1}, {x2, y2}}, color.RGBA{
 				0, rgb, rgb, 0xff,
-			})
+			}, zbuf)
 		}
 	}
 }
@@ -356,7 +362,7 @@ func abs(v int) int {
 	return v
 }
 
-func triangleBarycentric(img *image.RGBA, t tri, c color.Color) {
+func triangleBarycentric(img *image.RGBA, t tri, c color.Color, zbuf []int) {
 	boxMin := image.Point{
 		min(t[0].X, t[1].X, t[2].X),
 		min(t[0].Y, t[1].Y, t[2].Y),
