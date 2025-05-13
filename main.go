@@ -9,6 +9,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const width = 800
@@ -189,9 +190,10 @@ func render2D(img *image.RGBA, model *wfobj) {
 		x2 := int(float64(imgWidth/2) + v2.x*float64(imgWidth/2))
 		y2 := int(float64(imgHeight/2) - v2.y*float64(imgHeight/2))
 
-		line(img, x0, y0, x1, y1, cyan)
-		line(img, x0, y0, x2, y2, magenta)
-		line(img, x1, y1, x2, y2, yellow)
+		//line(img, x0, y0, x1, y1, cyan)
+		//line(img, x0, y0, x2, y2, magenta)
+		//line(img, x1, y1, x2, y2, yellow)
+		triangle(img, tri{{x0, y0}, {x1, y1}, {x2, y2}})
 	}
 }
 
@@ -203,11 +205,9 @@ func (t *tri) Sort() {
 		t[0], t[1] = t[1], t[0]
 	}
 	if t[0].Y > t[2].Y {
-		fmt.Println("swap 02")
 		t[0], t[2] = t[2], t[0]
 	}
 	if t[1].Y > t[2].Y {
-		fmt.Println("swap 12")
 		t[1], t[2] = t[2], t[1]
 	}
 }
@@ -225,36 +225,42 @@ func triangle(img *image.RGBA, t tri) {
 	dy1 := t[1].Y - t[0].Y
 	dy2 := t[2].Y - t[0].Y
 
-	// top half
-	// we need to remember x1 so we can pick up from there in the bottom half
-	// x1 will be guaranteed to be the "left" x
-	var x1 int
-	for i := t[0].Y; i <= t[1].Y; i++ {
-		sx1 := float64(dx1*(i-t[0].Y)) / float64(dy1)
-		sx2 := float64(dx2*(i-t[0].Y)) / float64(dy2)
-		x1 = t[0].X + int(sx1)
-		x2 := t[0].X + int(sx2)
-		swapgt(&x1, &x2)
-		for ii := x1; ii <= x2; ii++ {
-			img.Set(ii, i, cyan)
+	// top half (if not flat top e.g Y1==Y2)
+	// we need to remember our final x offsets here so we can pick up
+	// from those points at the end
+	x1 := t[0].X
+	x2 := t[1].X
+	if dy1 > 0 {
+		for i := t[0].Y; i <= t[1].Y; i++ {
+			sx1 := float64(dx1*(i-t[0].Y)) / float64(dy1)
+			sx2 := float64(dx2*(i-t[0].Y)) / float64(dy2)
+			x1 = t[0].X + int(sx1)
+			x2 = t[0].X + int(sx2)
+			swapgt(&x1, &x2)
+			for ii := x1; ii <= x2; ii++ {
+				img.Set(ii, i, cyan)
+			}
 		}
 	}
 
-	// bottom half, recompute deltas
-	// dx1 is now guaranteed to be the left
+	// bottom half (if not flat bottom e.g. Y2==Y3)
+	// must recompute deltas
 	// there's only ONE dy now because we're converging on the last point
-	dx1 = t[2].X - x1
-	dx2 = t[2].X - t[1].X
 	dy := t[2].Y - t[1].Y
-	origX1 := x1
-	for i := t[1].Y; i <= t[2].Y; i++ {
-		sx1 := float64(dx1*(i-t[1].Y)) / float64(dy)
-		sx2 := float64(dx2*(i-t[1].Y)) / float64(dy)
-		x1 := origX1 + int(sx1)
-		x2 := t[1].X + int(sx2)
-		swapgt(&x1, &x2)
-		for ii := x1; ii <= x2; ii++ {
-			img.Set(ii, i, magenta)
+	if dy > 0 {
+		dx1 = t[2].X - x1
+		dx2 = t[2].X - x2
+		origX1 := x1
+		origX2 := x2
+		for i := t[1].Y; i <= t[2].Y; i++ {
+			sx1 := float64(dx1*(i-t[1].Y)) / float64(dy)
+			sx2 := float64(dx2*(i-t[1].Y)) / float64(dy)
+			x1 := origX1 + int(sx1)
+			x2 := origX2 + int(sx2)
+			swapgt(&x1, &x2)
+			for ii := x1; ii <= x2; ii++ {
+				img.Set(ii, i, magenta)
+			}
 		}
 	}
 }
@@ -290,19 +296,10 @@ func main() {
 
 	renderLines(img)
 
-	//start := time.Now()
-	//render2D(img, model)
-	//end := time.Now()
-	//fmt.Printf("render in %v\n", end.Sub(start))
-
-	t1 := tri{{100, 100}, {200, 200}, {150, 300}}
-	triangle(img, t1)
-
-	// flat-top/bottom triangles need to work
-	t2 := tri{{300, 100}, {400, 100}, {400, 300}}
-	triangle(img, t2)
-	t3 := tri{{500, 100}, {500, 300}, {600, 300}}
-	triangle(img, t3)
+	start := time.Now()
+	render2D(img, model)
+	end := time.Now()
+	fmt.Printf("render in %v\n", end.Sub(start))
 
 	f, err := os.Create("out.png")
 	if err != nil {
