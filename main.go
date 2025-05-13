@@ -239,9 +239,8 @@ func render2D(img *image.RGBA, model *wfobj) {
 		// that.
 		face1 := v2.Sub(&v0)
 		face2 := v1.Sub(&v0)
-		faceNormal := face1.CrossProduct(face2)
-		faceNormalUnit := faceNormal.Unit()
-		faceBrightness := lightSource.DotProduct(faceNormalUnit)
+		faceNormal := face1.CrossProduct(face2).Unit()
+		faceBrightness := lightSource.DotProduct(faceNormal)
 
 		//line(img, x0, y0, x1, y1, cyan)
 		//line(img, x0, y0, x2, y2, magenta)
