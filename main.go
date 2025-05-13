@@ -11,6 +11,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const width = 800
@@ -259,7 +260,7 @@ func render2D(img *image.RGBA, model *wfobj) {
 		//line(img, x1, y1, x2, y2, yellow)
 		if faceBrightness > 0 {
 			rgb := byte(faceBrightness * 0xff)
-			triangle(img, tri{{x0, y0}, {x1, y1}, {x2, y2}}, color.RGBA{
+			triangleBarycentric(img, tri{{x0, y0}, {x1, y1}, {x2, y2}}, color.RGBA{
 				0, rgb, rgb, 0xff,
 			})
 		}
@@ -405,13 +406,10 @@ func main() {
 
 	renderGrid(img)
 
-	// test barycentric triangle
-	triangleBarycentric(img, tri{{150, 150}, {250, 250}, {200, 350}}, cyan)
-
-	////start := time.Now()
-	////render2D(img, model)
-	////end := time.Now()
-	////fmt.Printf("render in %v\n", end.Sub(start))
+	start := time.Now()
+	render2D(img, model)
+	end := time.Now()
+	fmt.Printf("render in %v\n", end.Sub(start))
 
 	f, err := os.Create("out.png")
 	if err != nil {
