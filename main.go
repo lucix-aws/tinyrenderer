@@ -261,13 +261,21 @@ func render2D(img *image.RGBA, model *wfobj) {
 		v2 := model.Vertices[face.VRefs[2]]
 
 		// test matrix on vertices
-		identity2 := Matrix2f{
-			1, 0,
-			0.3, 1,
+		shear := Matrix2f{
+			1, 0.3,
+			0, 1,
 		}
-		v0 = identity2.MultVertex(v0)
-		v1 = identity2.MultVertex(v1)
-		v2 = identity2.MultVertex(v2)
+		v0 = shear.MultVertex(v0)
+		v1 = shear.MultVertex(v1)
+		v2 = shear.MultVertex(v2)
+
+		rotate90 := Matrix2f{
+			math.Cos(math.Pi / 2), -math.Sin(math.Pi / 2),
+			math.Sin(math.Pi / 2), math.Cos(math.Pi / 2),
+		}
+		v0 = rotate90.MultVertex(v0)
+		v1 = rotate90.MultVertex(v1)
+		v2 = rotate90.MultVertex(v2)
 
 		// map vertices to be relative to center of image
 		p0 := image.Point{
