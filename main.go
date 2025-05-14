@@ -338,8 +338,11 @@ func triangle(img *image.RGBA, t tri, c color.Color) {
 	}
 }
 
-// i really don't fully understand how this is computed atm, but I understand
-// how to interpret the result
+// there are several ways to compute barycentric coordinates given a
+// triangle+Point, for this project I am not super concerned with how that is
+// derived. What matters is that we understand _what_ barycentric coordinates
+// are and how to interpret them to do things like z-buffering or
+// shading/texturing a triangle.
 func barycentric(t tri, p image.Point) vertex {
 	v1 := Point3{t[2].X - t[0].X, t[1].X - t[0].X, t[0].X - p.X}
 	v2 := Point3{t[2].Y - t[0].Y, t[1].Y - t[0].Y, t[0].Y - p.Y}
