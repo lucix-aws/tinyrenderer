@@ -172,12 +172,12 @@ func parsewf(contents string) (*wfobj, error) {
 	return &obj, nil
 }
 
-type Matrix2f struct {
+type Matrix2 struct {
 	A, B float64
 	C, D float64
 }
 
-func (m Matrix2f) MultPoint(p image.Point) image.Point {
+func (m Matrix2) MultPoint(p image.Point) image.Point {
 	return image.Point{
 		int(m.A*float64(p.X) + m.B*float64(p.Y)),
 		int(m.C*float64(p.X) + m.D*float64(p.Y)),
@@ -185,12 +185,33 @@ func (m Matrix2f) MultPoint(p image.Point) image.Point {
 }
 
 // does not touch the z-coordinate
-func (m Matrix2f) MultVertex(v vertex) vertex {
+func (m Matrix2) MultVertex(v vertex) vertex {
 	return vertex{
 		m.A*v.x + m.B*v.y,
 		m.C*v.x + m.D*v.y,
 		v.z,
 	}
+}
+
+type Matrix3 struct {
+	A, B, C float64
+	D, E, F float64
+	G, H, I float64
+}
+
+type Matrix4 struct {
+	A, B, C, D float64
+	E, F, G, H float64
+	I, J, K, L float64
+	M, N, O, P float64
+}
+
+func (m Matrix4) Project(v vertex) vertex {
+	x := m.A*v.x + m.B*v.y + m.C*v.z + m.D
+	y := m.E*v.x + m.F*v.y + m.G*v.z + m.H
+	z := m.I*v.x + m.J*v.y + m.K*v.z + m.L
+	zz := m.M*v.x + m.N*v.y + m.O*v.z + m.P
+	return vertex{x / zz, y / zz, z / zz}
 }
 
 func line(img *image.RGBA, x0, y0, x1, y1 int, c color.Color) {
@@ -244,8 +265,7 @@ func renderGrid(i *image.RGBA) {
 	line(i, 700, 0, 700, 800, grey)
 }
 
-// render frontal 2D projection of model (no z-index)
-func render2D(img *image.RGBA, model *wfobj) {
+func render(img *image.RGBA, model *wfobj) {
 	lightSource := vertex{0, 0, -1}
 
 	imgWidth := img.Rect.Max.X
@@ -261,21 +281,31 @@ func render2D(img *image.RGBA, model *wfobj) {
 		v2 := model.Vertices[face.VRefs[2]]
 
 		// test matrix on vertices
-		shear := Matrix2f{
-			1, 0.3,
-			0, 1,
-		}
-		v0 = shear.MultVertex(v0)
-		v1 = shear.MultVertex(v1)
-		v2 = shear.MultVertex(v2)
+		////	shear := Matrix2{
+		////		1, 0.3,
+		////		0, 1,
+		////	}
+		////	v0 = shear.MultVertex(v0)
+		////	v1 = shear.MultVertex(v1)
+		////	v2 = shear.MultVertex(v2)
 
-		rotate90 := Matrix2f{
-			math.Cos(math.Pi / 2), -math.Sin(math.Pi / 2),
-			math.Sin(math.Pi / 2), math.Cos(math.Pi / 2),
+		////	rotate90 := Matrix2f{
+		////		math.Cos(math.Pi / 2), -math.Sin(math.Pi / 2),
+		////		math.Sin(math.Pi / 2), math.Cos(math.Pi / 2),
+		////	}
+		////	v0 = rotate90.MultVertex(v0)
+		////	v1 = rotate90.MultVertex(v1)
+		////	v2 = rotate90.MultVertex(v2)
+
+		projector := Matrix4{
+			1, 0, 0, 0,
+			0, 1, 0, 0,
+			0, 0, 1, 0,
+			0, 0, -.1, 1,
 		}
-		v0 = rotate90.MultVertex(v0)
-		v1 = rotate90.MultVertex(v1)
-		v2 = rotate90.MultVertex(v2)
+		v0 = projector.Project(v0)
+		v1 = projector.Project(v1)
+		v2 = projector.Project(v2)
 
 		// map vertices to be relative to center of image
 		p0 := image.Point{
@@ -467,7 +497,7 @@ func main() {
 	renderGrid(img)
 
 	start := time.Now()
-	render2D(img, model)
+	render(img, model)
 	end := time.Now()
 	fmt.Printf("render in %v\n", end.Sub(start))
 
