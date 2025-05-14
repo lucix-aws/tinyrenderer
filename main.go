@@ -269,12 +269,11 @@ func render2D(img *image.RGBA, model *wfobj) {
 		// test matrix
 		identity2 := Matrix2f{
 			1, 0,
-			0, 1,
+			.5, 1,
 		}
 		p0 = identity2.MultPoint(p0)
 		p1 = identity2.MultPoint(p1)
 		p2 = identity2.MultPoint(p2)
-		fmt.Println(p0, p1, p2)
 
 		// calculate illumination on face. you can derive a brightness by
 		// defining an arbitrary "light source" unit vector that describes
@@ -409,7 +408,9 @@ func triangleBarycentric(img *image.RGBA, t tri, c color.Color, z1, z2, z3 float
 
 			z := z1*b.x + z2*b.y + z3*b.z
 			zi := x + y*img.Rect.Max.Y
-			if zbuf[zi] < z {
+			// coordinate transforms can make things go offscreen, should
+			// probably handle that earlier
+			if zi < len(zbuf) && zbuf[zi] < z {
 				zbuf[zi] = z
 				img.Set(x, y, c)
 			}
