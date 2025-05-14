@@ -184,6 +184,15 @@ func (m Matrix2f) MultPoint(p image.Point) image.Point {
 	}
 }
 
+// does not touch the z-coordinate
+func (m Matrix2f) MultVertex(v vertex) vertex {
+	return vertex{
+		m.A*v.x + m.B*v.y,
+		m.C*v.x + m.D*v.y,
+		v.z,
+	}
+}
+
 func line(img *image.RGBA, x0, y0, x1, y1 int, c color.Color) {
 	// ensure draw is ltr
 	if x1 < x0 {
@@ -247,33 +256,32 @@ func render2D(img *image.RGBA, model *wfobj) {
 	}
 
 	for _, face := range model.Faces {
-		// map normalized coordinates to be relative to center of image
 		v0 := model.Vertices[face.VRefs[0]]
+		v1 := model.Vertices[face.VRefs[1]]
+		v2 := model.Vertices[face.VRefs[2]]
+
+		// test matrix on vertices
+		identity2 := Matrix2f{
+			1, 0,
+			0.3, 1,
+		}
+		v0 = identity2.MultVertex(v0)
+		v1 = identity2.MultVertex(v1)
+		v2 = identity2.MultVertex(v2)
+
+		// map vertices to be relative to center of image
 		p0 := image.Point{
 			int(float64(imgWidth/2) + v0.x*float64(imgWidth/2)),
 			int(float64(imgHeight/2) - v0.y*float64(imgHeight/2)),
 		}
-
-		v1 := model.Vertices[face.VRefs[1]]
 		p1 := image.Point{
 			int(float64(imgWidth/2) + v1.x*float64(imgWidth/2)),
 			int(float64(imgHeight/2) - v1.y*float64(imgHeight/2)),
 		}
-
-		v2 := model.Vertices[face.VRefs[2]]
 		p2 := image.Point{
 			int(float64(imgWidth/2) + v2.x*float64(imgWidth/2)),
 			int(float64(imgHeight/2) - v2.y*float64(imgHeight/2)),
 		}
-
-		// test matrix
-		identity2 := Matrix2f{
-			1, 0,
-			.5, 1,
-		}
-		p0 = identity2.MultPoint(p0)
-		p1 = identity2.MultPoint(p1)
-		p2 = identity2.MultPoint(p2)
 
 		// calculate illumination on face. you can derive a brightness by
 		// defining an arbitrary "light source" unit vector that describes
@@ -293,7 +301,7 @@ func render2D(img *image.RGBA, model *wfobj) {
 		if faceBrightness > 0 {
 			rgb := byte(faceBrightness * 0xff)
 			clr := color.RGBA{0, rgb, rgb, 0xff}
-			triangleBarycentric(img, tri{p0, p1, p2}, clr, v0.z, v1.z, v2.z, zbuf)
+			triangle(img, tri{p0, p1, p2}, clr, v0.z, v1.z, v2.z, zbuf)
 		}
 	}
 }
@@ -313,9 +321,9 @@ func (t *tri) Sort() {
 	}
 }
 
-// "primitive" triangle render: sort by y coordinates, divide into 2 sub-triangles,
+// "primitive" triangleByHalves render: sort by y coordinates, divide into 2 sub-triangles,
 // and fill one line at a time
-func triangle(img *image.RGBA, t tri, c color.Color) {
+func triangleByHalves(img *image.RGBA, t tri, c color.Color) {
 	t.Sort()
 
 	// dx1 could be the left or right line but it doesn't really matter
@@ -390,7 +398,8 @@ func abs(v int) int {
 	return v
 }
 
-func triangleBarycentric(img *image.RGBA, t tri, c color.Color, z1, z2, z3 float64, zbuf []float64) {
+// draws a triangle using barycentric coordinates
+func triangle(img *image.RGBA, t tri, c color.Color, z1, z2, z3 float64, zbuf []float64) {
 	boxMin := image.Point{
 		min(t[0].X, t[1].X, t[2].X),
 		min(t[0].Y, t[1].Y, t[2].Y),
@@ -410,7 +419,7 @@ func triangleBarycentric(img *image.RGBA, t tri, c color.Color, z1, z2, z3 float
 			zi := x + y*img.Rect.Max.Y
 			// coordinate transforms can make things go offscreen, should
 			// probably handle that earlier
-			if zi < len(zbuf) && zbuf[zi] < z {
+			if zi >= 0 && zi < len(zbuf) && zbuf[zi] < z {
 				zbuf[zi] = z
 				img.Set(x, y, c)
 			}
