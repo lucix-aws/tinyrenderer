@@ -11,12 +11,14 @@
 				1, 0, 0, 0,
 				0, 1, 0, 0,
 				0, 0, 1, 0,
-				0, 0, -.2, 1,
+				0, 0, -.1, 1,
 			];
 
 			document.getElementById('fileInput').addEventListener('change', async (e) => {
 				const filedata = await e.target.files[0].text();
 				const model = parseWavefrontObject(filedata);
+
+				console.log(`model has ${model.vertices.length} vertices, ${model.faces.length} faces`);
 
 				const currentRotation = [
 					Math.cos(0), 0, Math.sin(0),
@@ -78,6 +80,9 @@
 					const screenA = point(Math.floor(centerX + a.x*centerY), Math.floor(centerY - a.y*centerY));
 					const screenB = point(Math.floor(centerX + b.x*centerY), Math.floor(centerY - b.y*centerY));
 					const screenC = point(Math.floor(centerX + c.x*centerY), Math.floor(centerY - c.y*centerY));
+					if (!inBounds(imageData, screenA, 100) || !inBounds(imageData, screenB, 100) || !inBounds(imageData, screenC, 100)) {
+						continue;
+					}
 
 					const f1 = vectorSub(c, a);
 					const f2 = vectorSub(b, a);
@@ -93,6 +98,10 @@
 
 				ctx.putImageData(imageData, 0, 0);
 			};
+
+			const inBounds = (imageData, point, buffer=0) =>
+				point.x >= 0-buffer && point.y > 0-buffer &&
+					point.x < imageData.width+buffer && point.y < imageData.height+buffer;
 
 			const parseWavefrontObject = (contents) => {
 				const model = { vertices: [], faces: [] };
