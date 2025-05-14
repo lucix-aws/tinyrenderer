@@ -172,6 +172,18 @@ func parsewf(contents string) (*wfobj, error) {
 	return &obj, nil
 }
 
+type Matrix2f struct {
+	A, B float64
+	C, D float64
+}
+
+func (m Matrix2f) MultPoint(p image.Point) image.Point {
+	return image.Point{
+		int(m.A*float64(p.X) + m.B*float64(p.Y)),
+		int(m.C*float64(p.X) + m.D*float64(p.Y)),
+	}
+}
+
 func line(img *image.RGBA, x0, y0, x1, y1 int, c color.Color) {
 	// ensure draw is ltr
 	if x1 < x0 {
@@ -237,16 +249,32 @@ func render2D(img *image.RGBA, model *wfobj) {
 	for _, face := range model.Faces {
 		// map normalized coordinates to be relative to center of image
 		v0 := model.Vertices[face.VRefs[0]]
-		x0 := int(float64(imgWidth/2) + v0.x*float64(imgWidth/2))
-		y0 := int(float64(imgHeight/2) - v0.y*float64(imgHeight/2))
+		p0 := image.Point{
+			int(float64(imgWidth/2) + v0.x*float64(imgWidth/2)),
+			int(float64(imgHeight/2) - v0.y*float64(imgHeight/2)),
+		}
 
 		v1 := model.Vertices[face.VRefs[1]]
-		x1 := int(float64(imgWidth/2) + v1.x*float64(imgWidth/2))
-		y1 := int(float64(imgHeight/2) - v1.y*float64(imgHeight/2))
+		p1 := image.Point{
+			int(float64(imgWidth/2) + v1.x*float64(imgWidth/2)),
+			int(float64(imgHeight/2) - v1.y*float64(imgHeight/2)),
+		}
 
 		v2 := model.Vertices[face.VRefs[2]]
-		x2 := int(float64(imgWidth/2) + v2.x*float64(imgWidth/2))
-		y2 := int(float64(imgHeight/2) - v2.y*float64(imgHeight/2))
+		p2 := image.Point{
+			int(float64(imgWidth/2) + v2.x*float64(imgWidth/2)),
+			int(float64(imgHeight/2) - v2.y*float64(imgHeight/2)),
+		}
+
+		// test matrix
+		identity2 := Matrix2f{
+			1, 0,
+			0, 1,
+		}
+		p0 = identity2.MultPoint(p0)
+		p1 = identity2.MultPoint(p1)
+		p2 = identity2.MultPoint(p2)
+		fmt.Println(p0, p1, p2)
 
 		// calculate illumination on face. you can derive a brightness by
 		// defining an arbitrary "light source" unit vector that describes
@@ -265,9 +293,8 @@ func render2D(img *image.RGBA, model *wfobj) {
 		//line(img, x1, y1, x2, y2, yellow)
 		if faceBrightness > 0 {
 			rgb := byte(faceBrightness * 0xff)
-			triangleBarycentric(img, tri{{x0, y0}, {x1, y1}, {x2, y2}}, color.RGBA{
-				0, rgb, rgb, 0xff,
-			}, v0.z, v1.z, v2.z, zbuf)
+			clr := color.RGBA{0, rgb, rgb, 0xff}
+			triangleBarycentric(img, tri{p0, p1, p2}, clr, v0.z, v1.z, v2.z, zbuf)
 		}
 	}
 }
