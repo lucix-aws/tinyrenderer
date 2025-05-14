@@ -194,9 +194,17 @@ func (m Matrix2) MultVertex(v vertex) vertex {
 }
 
 type Matrix3 struct {
-	A, B, C float64
-	D, E, F float64
-	G, H, I float64
+	A1, A2, A3 float64
+	B1, B2, B3 float64
+	C1, C2, C3 float64
+}
+
+func (m Matrix3) MultVertex(v vertex) vertex {
+	return vertex{
+		m.A1*v.x + m.A2*v.y + m.A3*v.z,
+		m.B1*v.x + m.B2*v.y + m.B3*v.z,
+		m.C1*v.x + m.C2*v.y + m.C3*v.z,
+	}
 }
 
 type Matrix4 struct {
@@ -280,28 +288,20 @@ func render(img *image.RGBA, model *wfobj) {
 		v1 := model.Vertices[face.VRefs[1]]
 		v2 := model.Vertices[face.VRefs[2]]
 
-		// test matrix on vertices
-		////	shear := Matrix2{
-		////		1, 0.3,
-		////		0, 1,
-		////	}
-		////	v0 = shear.MultVertex(v0)
-		////	v1 = shear.MultVertex(v1)
-		////	v2 = shear.MultVertex(v2)
-
-		////	rotate90 := Matrix2f{
-		////		math.Cos(math.Pi / 2), -math.Sin(math.Pi / 2),
-		////		math.Sin(math.Pi / 2), math.Cos(math.Pi / 2),
-		////	}
-		////	v0 = rotate90.MultVertex(v0)
-		////	v1 = rotate90.MultVertex(v1)
-		////	v2 = rotate90.MultVertex(v2)
+		rotate := Matrix3{
+			math.Cos(math.Pi / 2), 0, math.Sin(math.Pi / 2),
+			0, 1, 0,
+			-math.Sin(math.Pi / 2), 0, math.Cos(math.Pi / 2),
+		}
+		v0 = rotate.MultVertex(v0)
+		v1 = rotate.MultVertex(v1)
+		v2 = rotate.MultVertex(v2)
 
 		projector := Matrix4{
 			1, 0, 0, 0,
 			0, 1, 0, 0,
 			0, 0, 1, 0,
-			0, 0, -.1, 1,
+			0, 0, -.2, 1,
 		}
 		v0 = projector.Project(v0)
 		v1 = projector.Project(v1)
@@ -338,7 +338,8 @@ func render(img *image.RGBA, model *wfobj) {
 		//line(img, x1, y1, x2, y2, yellow)
 		if faceBrightness > 0 {
 			rgb := byte(faceBrightness * 0xff)
-			clr := color.RGBA{0, rgb, rgb, 0xff}
+			rgb2 := byte(faceBrightness * 0xa0)
+			clr := color.RGBA{rgb, rgb2, rgb, 0xff}
 			triangle(img, tri{p0, p1, p2}, clr, v0.z, v1.z, v2.z, zbuf)
 		}
 	}
