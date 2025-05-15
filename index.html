@@ -14,7 +14,20 @@
 				0, 0, -.1, 1,
 			];
 
-			document.getElementById('fileInput').addEventListener('change', async (e) => {
+			const keysdown = {};
+
+			document.addEventListener('keydown', e => {
+				if (e.repeat) {
+					return;
+				}
+
+				keysdown[e.code] = true;
+			});
+			document.addEventListener('keyup', e => {
+				keysdown[e.code] = false;
+			});
+
+			document.getElementById('fileInput').addEventListener('change', async e => {
 				const filedata = await e.target.files[0].text();
 				const model = parseWavefrontObject(filedata);
 
@@ -25,24 +38,42 @@
 					0, 1, 0,
 					-Math.sin(0), 0, Math.cos(0),
 				];
-				let step = 0;
 
-				render(model, currentRotation);
+				let step = 0;
+				let ztr = 0;
+				const stepdiv = 64;
+
+				render(model, currentRotation, 0);
 				setInterval(() => {
-					++step;
-					currentRotation[0] = Math.cos(step/32);
-					currentRotation[2] = Math.sin(step/32);
-					currentRotation[6] = -Math.sin(step/32);
-					currentRotation[8] = Math.cos(step/32);
+					if (keysdown.KeyW) {
+						ztr += 0.1;
+					}
+					if (keysdown.KeyS) {
+						ztr -= 0.1;
+					}
+					if (keysdown.KeyA) {
+						step -= keysdown.ShiftLeft ? 3 : 1;
+						currentRotation[0] = Math.cos(step/stepdiv);
+						currentRotation[2] = Math.sin(step/stepdiv);
+						currentRotation[6] = -Math.sin(step/stepdiv);
+						currentRotation[8] = Math.cos(step/stepdiv);
+					}
+					if (keysdown.KeyD) {
+						step += keysdown.ShiftLeft ? 3 : 1;
+						currentRotation[0] = Math.cos(step/stepdiv);
+						currentRotation[2] = Math.sin(step/stepdiv);
+						currentRotation[6] = -Math.sin(step/stepdiv);
+						currentRotation[8] = Math.cos(step/stepdiv);
+					}
 
 					const start = new Date();
-					render(model, currentRotation);
+					render(model, currentRotation, ztr);
 					const end = new Date();
-					console.log('elapsed', end - start);
+					//console.log('elapsed', end - start);
 				}, 1000/30);
 			});
 
-			const render = (model, rotation) => {
+			const render = (model, rotation, ztr) => {
 				const imageData = new ImageData(canvas.width, canvas.height);
 				for (let i = 0; i < imageData.data.length; i += 4) {
 					imageData.data[i+3] = 255;
@@ -65,9 +96,13 @@
 				const centerY = imageData.height / 2;
 
 				for (const face of model.faces) {
-					let a = model.vertices[face.vrefs[0]];
-					let b = model.vertices[face.vrefs[1]];
-					let c = model.vertices[face.vrefs[2]];
+					let a = { ...model.vertices[face.vrefs[0]] };
+					let b = { ...model.vertices[face.vrefs[1]] };
+					let c = { ...model.vertices[face.vrefs[2]] };
+
+					a.z += ztr;
+					b.z += ztr;
+					c.z += ztr;
 
 					a = matrix3Mult(rotation, a);
 					b = matrix3Mult(rotation, b);
@@ -167,20 +202,14 @@
 				};
 			};
 
-			const vectorSub = (i, j) => ({
-				x: i.x - j.x,
-				y: i.y - j.y,
-				z: i.z - j.z,
-			});
+			const vectorSub = (i, j) =>
+				vector(i.x - j.x, i.y - j.y, i.z - j.z);
 
 			const dotProduct = (i, j) =>
 				i.x*j.x + i.y*j.y + i.z*j.z;
 
-			const crossProduct = (i, j) => ({
-				x: i.y*j.z - i.z*j.y,
-				y: i.z*j.x - i.x*j.z,
-				z: i.x*j.y - i.y*j.x,
-			});
+			const crossProduct = (i, j) =>
+				vector(i.y*j.z - i.z*j.y, i.z*j.x - i.x*j.z, i.x*j.y - i.y*j.x);
 
 			const setPixel = (imageData, x, y, color) => {
 				x = Math.floor(x);
@@ -237,38 +266,23 @@
 			};
 
 			const barycentricCoordinates = (a, b, c, p) => {
-				const v1 = {
-					x: c.x - a.x,
-					y: b.x - a.x,
-					z: a.x - p.x,
-				};
-				const v2 = {
-					x: c.y - a.y,
-					y: b.y - a.y,
-					z: a.y - p.y,
-				};
-
+				const v1 = vector(c.x - a.x, b.x - a.x, a.x - p.x);
+				const v2 = vector(c.y - a.y, b.y - a.y, a.y - p.y);
 				const cross = crossProduct(v1, v2);
 				if (Math.abs(cross.z) < 1) {
 					return { x: -1, y: -1, z: -1 };
 				}
 
-				return {
-					x: 1 - (cross.x+cross.y)/cross.z,
-					y: cross.y / cross.z,
-					z: cross.x / cross.z,
-				};
+				return vector(
+					1 - (cross.x+cross.y)/cross.z,
+					cross.y / cross.z,
+					cross.x / cross.z,
+				);
 			};
 
 			const triangle = (zbuf, z1, z2, z3, imageData, a, b, c, color) => {
-				const boxMin = {
-					x: Math.min(a.x, b.x, c.x),
-					y: Math.min(a.y, b.y, c.y),
-				};
-				const boxMax = {
-					x: Math.max(a.x, b.x, c.x),
-					y: Math.max(a.y, b.y, c.y),
-				};
+				const boxMin = point(Math.min(a.x, b.x, c.x), Math.min(a.y, b.y, c.y));
+				const boxMax = point(Math.max(a.x, b.x, c.x), Math.max(a.y, b.y, c.y));
 
 				for (let x = boxMin.x; x < boxMax.x; ++x) {
 					for (let y = boxMin.y; y < boxMax.y; ++y) {
