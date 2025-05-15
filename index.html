@@ -14,6 +14,25 @@
 				0, 0, -.1, 1,
 			];
 
+			const lookat = (eye, center, up) => {
+				const z = vectorUnit(vectorSub(eye, center));
+				const x = vectorUnit(crossProduct(up, z));
+				const y = vectorUnit(crossProduct(z, x));
+				const minv = [ // what?
+					x.x, x.y, x.z, 0,
+					y.x, y.y, y.z, 0,
+					z.x, z.y, z.z, 0,
+					  0,   0,   0, 1,
+				];
+				const tr = [ // this is a translation, that makes sense
+					1, 0, 0, -eye.x,
+					0, 1, 0, -eye.y,
+					0, 0, 1, -eye.z,
+					0, 0, 0, 1,
+				];
+				return matrix4Mult4(minv, tr);
+			};
+
 			const keysdown = {};
 
 			document.addEventListener('keydown', e => {
@@ -43,37 +62,38 @@
 				let ztr = 0;
 				const stepdiv = 64;
 
-				render(model, currentRotation, 0);
+				const camera = vector(0, 0, -1);
+				let lookTheta = 0;
+
+				render(model, camera, lookTheta);
 				setInterval(() => {
 					if (keysdown.KeyW) {
-						ztr += 0.1;
+						camera.z += keysdown.ShiftLeft ? 0.3 : 0.1;
 					}
 					if (keysdown.KeyS) {
-						ztr -= 0.1;
+						camera.z -= keysdown.ShiftLeft ? 0.3 : 0.1;
 					}
 					if (keysdown.KeyA) {
-						step -= keysdown.ShiftLeft ? 3 : 1;
-						currentRotation[0] = Math.cos(step/stepdiv);
-						currentRotation[2] = Math.sin(step/stepdiv);
-						currentRotation[6] = -Math.sin(step/stepdiv);
-						currentRotation[8] = Math.cos(step/stepdiv);
+						camera.x += keysdown.ShiftLeft ? 0.3 : 0.1;
 					}
 					if (keysdown.KeyD) {
-						step += keysdown.ShiftLeft ? 3 : 1;
-						currentRotation[0] = Math.cos(step/stepdiv);
-						currentRotation[2] = Math.sin(step/stepdiv);
-						currentRotation[6] = -Math.sin(step/stepdiv);
-						currentRotation[8] = Math.cos(step/stepdiv);
+						camera.x -= keysdown.ShiftLeft ? 0.3 : 0.1;
+					}
+					if (keysdown.KeyQ) {
+						look += keysdown.ShiftLeft ? 0.03 : 0.01;
+					}
+					if (keysdown.KeyE) {
+						look -= keysdown.ShiftLeft ? 0.03 : 0.01;
 					}
 
 					const start = new Date();
-					render(model, currentRotation, ztr);
+					render(model, camera, lookTheta);
 					const end = new Date();
 					//console.log('elapsed', end - start);
 				}, 1000/30);
 			});
 
-			const render = (model, rotation, ztr) => {
+			const render = (model, cameraVector, lookTheta) => {
 				const imageData = new ImageData(canvas.width, canvas.height);
 				for (let i = 0; i < imageData.data.length; i += 4) {
 					imageData.data[i+3] = 255;
@@ -95,18 +115,18 @@
 				const centerX = imageData.width / 2;
 				const centerY = imageData.height / 2;
 
+				const cameraMatrix = lookat(
+					cameraVector, vector(cameraVector.x+Math.sin(lookTheta),cameraVector.y,cameraVector.z+1), vector(0,1,0),
+				);
+
 				for (const face of model.faces) {
 					let a = { ...model.vertices[face.vrefs[0]] };
 					let b = { ...model.vertices[face.vrefs[1]] };
 					let c = { ...model.vertices[face.vrefs[2]] };
 
-					a.z += ztr;
-					b.z += ztr;
-					c.z += ztr;
-
-					a = matrix3Mult(rotation, a);
-					b = matrix3Mult(rotation, b);
-					c = matrix3Mult(rotation, c);
+					a = matrix4Project(cameraMatrix, a);
+					b = matrix4Project(cameraMatrix, b);
+					c = matrix4Project(cameraMatrix, c);
 
 					a = matrix4Project(perspective, a);
 					b = matrix4Project(perspective, b);
@@ -227,6 +247,15 @@
 				z: m[6]*v.x + m[7]*v.y + m[8]*v.z,
 			});
 
+			const matrix4Mult4 = (i, j) => [ // this is fine
+				i[0]*j[0] +   i[1]*j[4] +  i[2]*j[8] +  i[3]*j[12] ,  i[0]*j[1] +  i[1]*j[5] +  i[2]*j[9] +  i[3]*j[13] ,  i[0]*j[2] +  i[1]*j[6] +  i[2]*j[10] +  i[3]*j[14] ,   i[0]*j[3] +  i[1]*j[7] +  i[2]*j[11] +  i[3]*j[15] ,
+				i[4]*j[0] +   i[5]*j[4] +  i[6]*j[8] +  i[7]*j[12] ,  i[4]*j[1] +  i[5]*j[5] +  i[6]*j[9] +  i[7]*j[13] ,  i[4]*j[2] +  i[5]*j[6] +  i[6]*j[10] +  i[7]*j[14] ,   i[4]*j[3] +  i[5]*j[7] +  i[6]*j[11] +  i[7]*j[15] , 
+				i[8]*j[0] +   i[9]*j[4] + i[10]*j[8] + i[11]*j[12] ,  i[8]*j[1] +  i[9]*j[5] + i[10]*j[9] + i[11]*j[13] ,  i[8]*j[2] +  i[9]*j[6] + i[10]*j[10] + i[11]*j[14] ,   i[8]*j[3] +  i[9]*j[7] + i[10]*j[11] + i[11]*j[15] , 
+				i[12]*j[0] + i[13]*j[4] + i[14]*j[8] + i[15]*j[12] , i[12]*j[1] + i[13]*j[5] + i[14]*j[9] + i[15]*j[13] , i[12]*j[2] + i[13]*j[6] + i[14]*j[10] + i[15]*j[14] ,  i[12]*j[3] + i[13]*j[7] + i[14]*j[11] + i[15]*j[15] , 
+			];
+
+			const m4c = (r, c) => r*4 + c;
+
 			const matrix4Project = (m, v) => {
 				const x = m[0]*v.x + m[1]*v.y + m[2]*v.z + m[3];
 				const y = m[4]*v.x + m[5]*v.y + m[6]*v.z + m[7];
@@ -234,6 +263,13 @@
 				const zz = m[12]*v.x + m[13]*v.y + m[14]*v.z + m[15];
 				return vector(x / zz, y / zz, z / zz);
 			};
+
+			const matrixViewport = (x, y, w, h, d) => [
+				w/2,   0,   0, x+w/2,
+				  0, h/2,   0, y+h/2,
+				  0,   0, d/2,   d/2,
+				  0,   0,   0,     1,
+			];
 
 			const line = (imageData, x0, y0, x1, y1, color) => {
 				if (x1 < x0) {
