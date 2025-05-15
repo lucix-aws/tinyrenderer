@@ -2,6 +2,7 @@
 <html>
 	<body>
 		<input type='file' id='fileInput' />
+		<div id='theta' />
 		<canvas id='image' width=1280 height=720 />
 		<script type='text/javascript'>
 			const canvas = document.getElementById('image');
@@ -62,16 +63,18 @@
 				let ztr = 0;
 				const stepdiv = 64;
 
-				const camera = vector(0, 0, -1);
+				const camera = vector(0, 0, 0);
 				let lookTheta = 0;
+
+				const pi2 = 2 * Math.PI;
 
 				render(model, camera, lookTheta);
 				setInterval(() => {
 					if (keysdown.KeyW) {
-						camera.z += keysdown.ShiftLeft ? 0.3 : 0.1;
+						camera.z += (keysdown.ShiftLeft ? 0.3 : 0.1) * Math.cos(lookTheta);
 					}
 					if (keysdown.KeyS) {
-						camera.z -= keysdown.ShiftLeft ? 0.3 : 0.1;
+						camera.z -= (keysdown.ShiftLeft ? 0.3 : 0.1) * Math.cos(lookTheta);
 					}
 					if (keysdown.KeyA) {
 						camera.x += keysdown.ShiftLeft ? 0.3 : 0.1;
@@ -80,11 +83,22 @@
 						camera.x -= keysdown.ShiftLeft ? 0.3 : 0.1;
 					}
 					if (keysdown.KeyQ) {
-						look += keysdown.ShiftLeft ? 0.03 : 0.01;
+						lookTheta += keysdown.ShiftLeft ? 0.03 : 0.01;
+						console.log(lookTheta, pi2, -pi2)
+						if (lookTheta < -pi2 || lookTheta > pi2) {
+							lookTheta = 0;
+						}
 					}
 					if (keysdown.KeyE) {
-						look -= keysdown.ShiftLeft ? 0.03 : 0.01;
+						lookTheta -= keysdown.ShiftLeft ? 0.03 : 0.01;
+						if (lookTheta < -pi2 || lookTheta > pi2) {
+							lookTheta = 0;
+						}
 					}
+
+////				document.getElementById('theta').innerHTML =
+////					`theta: ${lookTheta * 180/Math.PI},
+////					pos: x=${camera.x} y=${camera.y} z=${camera.z}`;
 
 					const start = new Date();
 					render(model, camera, lookTheta);
@@ -115,9 +129,12 @@
 				const centerX = imageData.width / 2;
 				const centerY = imageData.height / 2;
 
-				const cameraMatrix = lookat(
-					cameraVector, vector(cameraVector.x+Math.sin(lookTheta),cameraVector.y,cameraVector.z+1), vector(0,1,0),
+				const lookDirection = vector(
+					cameraVector.x + Math.sin(lookTheta),
+					cameraVector.y,
+					cameraVector.z + Math.cos(lookTheta),
 				);
+				const cameraMatrix = lookat(cameraVector, lookDirection, vector(0,1,0));
 
 				for (const face of model.faces) {
 					let a = { ...model.vertices[face.vrefs[0]] };
