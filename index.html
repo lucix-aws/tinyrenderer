@@ -193,6 +193,12 @@
 				ctx.fillText(`[A, D]: strafe left, right`, 6, 24*11);
 				ctx.fillText(`[Q, E]: look left, right`, 6, 24*12);
 				ctx.fillText(`[T]: toggle wireframe`, 6, 24*13);
+
+				ctx.fillText(`camera:`, 6, 24*19);
+				ctx.fillText(`[${cameraMatrix[0].toFixed(2)},${cameraMatrix[1].toFixed(2)},${cameraMatrix[2].toFixed(2)},${cameraMatrix[3].toFixed(2)}]`, 6, 24*20);
+				ctx.fillText(`[${cameraMatrix[4].toFixed(2)},${cameraMatrix[5].toFixed(2)},${cameraMatrix[6].toFixed(2)},${cameraMatrix[7].toFixed(2)}]`, 6, 24*21);
+				ctx.fillText(`[${cameraMatrix[8].toFixed(2)},${cameraMatrix[9].toFixed(2)},${cameraMatrix[10].toFixed(2)},${cameraMatrix[11].toFixed(2)}]`, 6, 24*22);
+				ctx.fillText(`[${cameraMatrix[12].toFixed(2)},${cameraMatrix[13].toFixed(2)},${cameraMatrix[14].toFixed(2)},${cameraMatrix[15].toFixed(2)}]`, 6, 24*23);
 			};
 
 			const inBounds = (imageData, point, buffer=0) =>
