@@ -138,6 +138,8 @@
 				);
 				const cameraMatrix = lookat(cameraVector, lookDirection, vector(0,1,0));
 
+				const view = matrixViewport(0, 0, 1280, 720, );
+
 				for (const face of model.faces) {
 					let a = { ...model.vertices[face.vrefs[0]] };
 					let b = { ...model.vertices[face.vrefs[1]] };
@@ -244,7 +246,6 @@
 
 				return model;
 			}
-
 
 			const point = (x, y) => ({ x, y });
 			const vector = (x, y, z) => ({ x, y, z });
@@ -385,7 +386,34 @@
 			for (const vertex of model2.vertices) {
 				vertex.x += 1;
 			}
-			init([model, model2]);
+
+			const cube = {
+				"vertices": [
+					{ "x": -0.5, "y": -0.5, "z": 0.5 },
+					{ "x": 0.5, "y": -0.5, "z": 0.5 },
+					{ "x": -0.5, "y": 0.5, "z": 0.5 },
+					{ "x": 0.5, "y": 0.5, "z": 0.5 },
+					{ "x": -0.5, "y": 0.5, "z": -0.5 },
+					{ "x": 0.5, "y": 0.5, "z": -0.5 },
+					{ "x": -0.5, "y": -0.5, "z": -0.5 },
+					{ "x": 0.5, "y": -0.5, "z": -0.5 },
+				],
+				"faces": [
+					{ "vrefs": [ 0, 1, 2 ] },
+					{ "vrefs": [ 2, 1, 3 ] },
+					{ "vrefs": [ 2, 3, 4 ] },
+					{ "vrefs": [ 4, 3, 5 ] },
+					{ "vrefs": [ 4, 5, 6 ] },
+					{ "vrefs": [ 6, 5, 7 ] },
+					{ "vrefs": [ 6, 7, 0 ] },
+					{ "vrefs": [ 0, 7, 1 ] },
+					{ "vrefs": [ 1, 7, 3 ] },
+					{ "vrefs": [ 3, 7, 5 ] },
+					{ "vrefs": [ 6, 0, 4 ] },
+					{ "vrefs": [ 4, 0, 2 ] },
+				]
+			};
+			init([model]);
 		</script>
 	</body>
 </html>
